@@ -1,0 +1,55 @@
+import 'package:flutter/material.dart';
+import 'employee_listing_screen.dart';
+import 'buyer_listing_screen.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Navigation Example',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: HomeScreen(),
+      routes: {
+        '/employee': (context) => EmployeeListingScreen(),
+        '/buyer': (context) => BuyerListingScreen(),
+      },
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Home'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/employee');
+              },
+              child: Text('Employee'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/buyer');
+              },
+              child: Text('Buyer'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

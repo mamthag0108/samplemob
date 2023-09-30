@@ -1,0 +1,321 @@
+﻿import 'dart:ffi';
+import './employee_listing_screen.dart';
+import 'package:connect_to_sql_server_directly/connect_to_sql_server_directly.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: "Employee App",
+      home: EmployeeAddScreen(
+        employeeData: {},
+      ),
+    );
+  }
+}
+
+class EmployeeAddScreen extends StatefulWidget {
+  final Map<String, dynamic> employeeData;
+
+  EmployeeAddScreen({Key? key, required this.employeeData}) : super(key: key);
+
+  @override
+  _EmployeeAddScreenState createState() => _EmployeeAddScreenState();
+}
+
+class _EmployeeAddScreenState extends State<EmployeeAddScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  TextEditingController _nameController = TextEditingController();
+  TextEditingController _dobController = TextEditingController();
+  TextEditingController _departmentController = TextEditingController();
+  String? _selectedGender = 'M'; // Initialize as nullable
+  TextEditingController _mobileNumberController = TextEditingController();
+
+  bool _isViewMode = false; // Flag to control view/edit mode
+  bool _isEditMode = false; 
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the text fields with the passed data (if available).
+    if (widget.employeeData.isNotEmpty) {
+      _nameController.text = widget.employeeData['Name'] ?? '';
+      _dobController.text = widget.employeeData['DOB'] ?? '';
+      _departmentController.text = widget.employeeData['Department'] ?? '';
+      _selectedGender = widget.employeeData['Gender'] ?? 'M';
+      _mobileNumberController.text = widget.employeeData['MobileNumber'] ?? '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Add Employee'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'Name'),
+                validator: (value) {
+                  if (value?.isEmpty == true) {
+                    return 'Please enter a name';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _dobController,
+                decoration: InputDecoration(labelText: 'DOB (YYYY-MM-DD)'),
+                validator: (value) {
+                  if (value?.isEmpty == true) {
+                    return 'Please enter a date of birth';
+                  }
+                  return null;
+                },
+              ),
+              // Add fields for Gender and MobileNumber
+              TextFormField(
+                controller: _departmentController,
+                decoration: InputDecoration(labelText: 'Department'),
+                validator: (value) {
+                  if (value?.isEmpty == true) {
+                    return 'Please enter a department';
+                  }
+                  return null;
+                },
+              ),
+              Row(
+                children: [
+                  Text('Gender:'),
+                  Radio(
+                    value: 'M',
+                    groupValue: _selectedGender,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedGender = value as String?;
+                      });
+                    },
+                  ),
+                  Text('Male'),
+                  Radio(
+                    value: 'F',
+                    groupValue: _selectedGender,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedGender = value as String?;
+                      });
+                    },
+                  ),
+                  Text('Female'),
+                ],
+              ),
+              TextFormField(
+                controller: _mobileNumberController,
+                decoration: InputDecoration(labelText: 'Mobile Number'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value?.isEmpty == true) {
+                    return 'Please enter a mobile number';
+                  }
+                  if (int.tryParse(value!) == null) {
+                    return 'Please enter a valid integer';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if (_isViewMode) {
+                    // Handle view mode actions here
+                  } else if (_isEditMode) {
+                    // Handle edit mode actions here
+                  } else {
+                    if (_formKey.currentState?.validate() == true) {
+                      // Enter edit mode if not already in view mode
+                      setState(() {
+                        _isEditMode = true;
+                      });
+                    }
+                  }
+                },
+                child: Text(_isViewMode ? 'Save' : 'Edit'),
+              ),
+              if (_isEditMode)
+                ElevatedButton(
+                  onPressed: () {
+                    // Handle save/update action here
+                  },
+                  child: Text('Update'),
+                ),
+              if (!_isViewMode)
+                ElevatedButton(
+                  onPressed: () {
+                    // Add code here to confirm the delete action and perform the delete.
+                    // You can use a dialog to confirm the action.
+                    // If the user confirms, call a function to delete the record.
+                    _showDeleteConfirmationDialog();
+                  },
+                  child: Text('Delete'),
+                )
+            ],
+          )
+          ),
+        ),
+      );
+    
+  }
+
+ 
+
+  void _showDeleteConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Delete'),
+          content: Text('Are you sure you want to delete this record?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                // Close the dialog.
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Close the dialog and proceed with the delete action.
+                Navigator.of(context).pop();
+                _deleteRecord();
+              },
+              child: Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+ void _deleteRecord() async{
+    // Assuming you have a function to delete the record from your data source.
+    // Replace this with your actual delete logic.
+    bool success = deleteRecordFromDataSource(employeeData.employeeID) as bool;
+
+    if (success) {
+      // Optionally, you can show a confirmation message.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Record deleted successfully.'),
+        ),
+      );
+
+      // Navigate back to the previous screen or any other desired screen.
+      Navigator.pop(context);
+    }else {
+      // Handle the case where the delete operation fails.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete the record.'),
+        ),
+      );
+    }
+  }
+   Future<bool> deleteRecordFromDataSource(int employeeID) async {
+     final _connectToSqlServerDirectlyPlugin = ConnectToSqlServerDirectly();
+     final queryResult =
+            await _connectToSqlServerDirectlyPlugin.getStatusOfQueryResult(
+          "Delete From EmployeeMob where EmployeeId = @employeeID",
+        );
+    return true; 
+  }
+
+
+
+  Future<void> saveToDatabase() async {
+    // Initialize the connection to your SQL Server database
+    final _connectToSqlServerDirectlyPlugin = ConnectToSqlServerDirectly();
+    final connectionResult = await _connectToSqlServerDirectlyPlugin
+        .initializeConnection('192.168.1.3', 'Traininng', 'sa', 'JPLjeevan123',
+            instance: 'sqlerp');
+
+    try {
+      if (connectionResult == null || connectionResult is String) {
+        // Handle the case where connectionResult is a string (indicating an error)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Failed to connect to the database: $connectionResult')),
+        );
+      } else {
+        final queryResult =
+            await _connectToSqlServerDirectlyPlugin.getStatusOfQueryResult(
+          "INSERT INTO EmployeeMob(name, dob, department, gender, mobileNumber) "
+          "VALUES('${_nameController.text}', '${_dobController.text}', "
+          "'${_departmentController.text}', '${_selectedGender}', "
+          "'${_mobileNumberController.text}')",
+        );
+
+        if (queryResult) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green),
+                  SizedBox(width: 8), // Spacer
+                  Text('Data saved successfully'),
+                ],
+              ),
+              duration: Duration(seconds: 2), 
+            ),
+          );
+
+          /* 2. Navigate to the ListScreen
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => EmployeeListingScreen(),
+            ),
+          );*/
+          _nameController.clear();
+          _dobController.clear();
+          _departmentController.clear();
+          _selectedGender = 'M'; // Assuming 'M' is the default value
+          _mobileNumberController.clear();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to save employee data')),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {}
+  }
+}
+
+class EmployeeListingScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Employee Listing'),
+      ),
+      body: Center(
+        child: Text('Employee Listing Screen Content'),
+      ),
+    );
+  }
+}
